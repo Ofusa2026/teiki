@@ -509,7 +509,7 @@ body.focus-mode .focus-hide { display:none !important; }
     <div class="logo-badge"><span>KMT</span></div>
     <div class="sidebar-title">定期届出<br>管理システム</div>
     <div class="sidebar-sub">2025年度 対象</div>
-    <div class="sidebar-ver" id="sidebar-ver">v2026.04.06.04</div>
+    <div class="sidebar-ver" id="sidebar-ver">v2026.04.07.05</div>
   </div>
 
   <div class="nav-section">
@@ -565,7 +565,7 @@ body.focus-mode .focus-hide { display:none !important; }
   <div id="topbar">
     <div>
       <span class="topbar-title" id="topbar-title">ダッシュボード</span>
-      <span class="topbar-sub" id="topbar-sub">KMT 定期届出 2025年度 ver.20260407.04</span>
+      <span class="topbar-sub" id="topbar-sub">KMT 定期届出 2025年度 ver.20260407.05</span>
     </div>
     <div class="topbar-actions">
       <!-- 集中モードバナー（集中中のみ表示） -->
@@ -590,8 +590,13 @@ body.focus-mode .focus-hide { display:none !important; }
     </div>
   </div>
 
+
+  <div id="content">
+
+    <!-- DASHBOARD -->
+    <div id="panel-dashboard" class="panel active">
   <!-- 申請フロー：全画面共通で常時表示 -->
-  <div id="milestone-bar" style="background:var(--bg2);border-bottom:1px solid var(--border);padding:10px 20px;flex-shrink:0">
+    <div id="milestone-bar" style="background:var(--bg2);border-bottom:1px solid var(--border);padding:10px 20px;flex-shrink:0">
     <div class="milestone-title" style="margin-bottom:8px">📋 申請フロー（書類受領後）</div>
     <div class="milestone-track" id="ms-track">
       <div class="milestone-step ms-clickable" id="ms-s1" onclick="msFocusGo(1)">
@@ -635,13 +640,9 @@ body.focus-mode .focus-hide { display:none !important; }
         <div class="ms-label">書類出力</div>
         <div class="ms-sub">全選択・ZIP化</div>
       </div>
+      </div>
     </div>
-  </div>
 
-  <div id="content">
-
-    <!-- DASHBOARD -->
-    <div id="panel-dashboard" class="panel active">
 
       <div class="deadline-banner">
         <div style="text-align:center">
@@ -2232,7 +2233,7 @@ var _coSortKey = '', _coSortAsc = true, _coShowAll = false, _docShowAll = false;
 
 document.addEventListener('DOMContentLoaded', function() {
   loadSettings(); calcDeadline();
-  console.log('%c定期届出管理システム v2026.04.06.04%c | companies:'+companies.length+' foreigners:'+foreigners.length, 'background:#1e3a5f;color:#fff;padding:2px 8px;border-radius:3px;font-weight:bold','color:#64748b');
+  console.log('%c定期届出管理システム v2026.04.07.05%c | companies:'+companies.length+' foreigners:'+foreigners.length, 'background:#1e3a5f;color:#fff;padding:2px 8px;border-radius:3px;font-weight:bold','color:#64748b');
   if (GAS_URL) loadAllData();
   else { showToast('設定画面でGAS URLを入力してください','warn'); switchPanel('settings',document.querySelector('[data-panel=settings]')); }
 });
@@ -4776,9 +4777,6 @@ function switchPanel(id,el){
   if(el) el.classList.add('active');
   var t={dashboard:'ダッシュボード',companies:'所属機関一覧',foreigners:'外国人マスタ',salary:'給与データ入力',calc:'自動計算・確認',doccheck:'書類チェック',mail:'案内文',settings:'設定'};
   if (id === 'mail') setTimeout(renderMailPreview, 50);
-  // 設定画面ではマイルストーンバーを非表示
-  var msBar = document.getElementById('milestone-bar');
-  if (msBar) msBar.style.display = (id === 'settings' || id === 'aimemory') ? 'none' : '';
   var title = t[id]||id;
   if (focusCompany) title += '　🎯 ' + focusCompany.name;
   document.getElementById('topbar-title').textContent = title;
