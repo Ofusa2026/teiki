@@ -116,8 +116,6 @@ body { font-family:'Noto Sans JP',sans-serif; background:var(--bg); color:var(--
 #content { flex:1; overflow-y:auto; padding:20px; }
 .panel { display:none; }
 .panel.active { display:block; }
-#panel-settings.active ~ * #milestone-bar,
-body:has(#panel-settings.active) #milestone-bar { display:none; }
 
 /* ===== STATS ===== */
 .stats-row { display:grid; grid-template-columns:repeat(4,1fr); gap:12px; margin-bottom:20px; }
@@ -511,7 +509,7 @@ body.focus-mode .focus-hide { display:none !important; }
     <div class="logo-badge"><span>KMT</span></div>
     <div class="sidebar-title">定期届出<br>管理システム</div>
     <div class="sidebar-sub">2025年度 対象</div>
-    <div class="sidebar-ver" id="sidebar-ver">v2026.04.07.09</div>
+    <div class="sidebar-ver" id="sidebar-ver">v2026.04.07.12</div>
   </div>
 
   <div class="nav-section">
@@ -567,7 +565,7 @@ body.focus-mode .focus-hide { display:none !important; }
   <div id="topbar">
     <div>
       <span class="topbar-title" id="topbar-title">ダッシュボード</span>
-      <span class="topbar-sub" id="topbar-sub">KMT 定期届出 2025年度 ver.20260407.09</span>
+      <span class="topbar-sub" id="topbar-sub">KMT 定期届出 2025年度 ver.20260407.12</span>
     </div>
     <div class="topbar-actions">
       <!-- 集中モードバナー（集中中のみ表示） -->
@@ -1026,6 +1024,7 @@ body.focus-mode .focus-hide { display:none !important; }
       <div id="knowledge-list"></div>
     </div>
     </div>
+    </div>
 
     <div id="panel-settings" class="panel">
         <div class="table-wrapper">
@@ -1036,7 +1035,7 @@ body.focus-mode .focus-hide { display:none !important; }
               <input type="text" class="input" id="setting-gas-url" placeholder="https://script.google.com/macros/s/...">
             </div>
             <div class="field-group">
-              <label class="field-label">メール送信用GAS URL <span style="font-size:10px;color:var(--text3);font-weight:400">（確認文メール送信用）</span></label>
+              <label class="field-label">メール送信用GAS URL <span style="font-size:10px;color:var(--text3);font-weight:400">（<a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="aac184d9cbc1cbc7c5dec5eacdd3c5d9cfc387c9cbc7c8c584c9c5c7">[email&#160;protected]</a>用）</span></label>
               <input type="text" class="input" id="setting-mail-gas-url" placeholder="https://script.google.com/macros/s/...">
             </div>
             <div class="field-group">
@@ -1113,12 +1112,7 @@ body.focus-mode .focus-hide { display:none !important; }
             <div id="csv-import-result"></div>
           </div>
         </div>
-      </div>
     </div>
-
-  </div>
-</div>
-</div>
 
 <!-- ===== MODALS ===== -->
 
@@ -2234,7 +2228,7 @@ var _coSortKey = '', _coSortAsc = true, _coShowAll = false, _docShowAll = false;
 
 document.addEventListener('DOMContentLoaded', function() {
   loadSettings(); calcDeadline();
-  console.log('%c定期届出管理システム v2026.04.07.09%c | companies:'+companies.length+' foreigners:'+foreigners.length, 'background:#1e3a5f;color:#fff;padding:2px 8px;border-radius:3px;font-weight:bold','color:#64748b');
+  console.log('%c定期届出管理システム v2026.04.07.12%c | companies:'+companies.length+' foreigners:'+foreigners.length, 'background:#1e3a5f;color:#fff;padding:2px 8px;border-radius:3px;font-weight:bold','color:#64748b');
   if (GAS_URL) loadAllData();
   else { showToast('設定画面でGAS URLを入力してください','warn'); switchPanel('settings',document.querySelector('[data-panel=settings]')); }
 });
