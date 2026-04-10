@@ -572,7 +572,7 @@ body.focus-mode .focus-hide { display:none !important; }
   <div id="topbar">
     <div>
       <span class="topbar-title" id="topbar-title">ダッシュボード</span>
-      <span class="topbar-sub" id="topbar-sub">OFUSA 定期届出管理 <span style="font-size:10px;color:var(--text3)">ver.20260410.06</span></span>
+      <span class="topbar-sub" id="topbar-sub">OFUSA 定期届出管理 <span style="font-size:10px;color:var(--text3)">ver.20260410.07</span></span>
     </div>
     <div class="topbar-actions">
       <!-- 集中モードバナー（集中中のみ表示） -->
@@ -1112,15 +1112,9 @@ body.focus-mode .focus-hide { display:none !important; }
                 🔒 このブラウザのlocalStorageにのみ保存されます。外部には送信されません。
               </div>
             </div>
-            <div class="form-grid">
-              <div class="field-group">
-                <label class="field-label">対象年度</label>
-                <input type="text" class="input" id="setting-year" value="2025">
-              </div>
-              <div class="field-group">
-                <label class="field-label">登録支援機関名</label>
-                <input type="text" class="input" id="setting-org-name" value="大房行政書士法人">
-              </div>
+            <div class="field-group" style="max-width:240px">
+              <label class="field-label">対象年度</label>
+              <input type="text" class="input" id="setting-year" value="2025">
             </div>
             <div class="alert alert-info">ℹ️ スプレッドシート「設定」シートB5のURLを入力してください。</div>
             <div style="display:flex;gap:8px">
@@ -2361,19 +2355,16 @@ function loadSettings() {
   document.getElementById('setting-gas-url').value = GAS_URL;
   if(document.getElementById('setting-mail-gas-url')) document.getElementById('setting-mail-gas-url').value = MAIL_GAS_URL;
   document.getElementById('setting-year').value = FISCAL_YEAR;
-  document.getElementById('setting-org-name').value = ORG_NAME;
   document.getElementById('setting-anthropic-key').value = ANTHROPIC_KEY;
 }
 function saveSettings() {
   GAS_URL = document.getElementById('setting-gas-url').value.trim();
   MAIL_GAS_URL = (document.getElementById('setting-mail-gas-url')||{value:''}).value.trim();
   FISCAL_YEAR = document.getElementById('setting-year').value.trim();
-  ORG_NAME = document.getElementById('setting-org-name').value.trim();
   ANTHROPIC_KEY = document.getElementById('setting-anthropic-key').value.trim();
   localStorage.setItem('gas_url', GAS_URL);
   localStorage.setItem('mail_gas_url', MAIL_GAS_URL);
   localStorage.setItem('fiscal_year', FISCAL_YEAR);
-  localStorage.setItem('org_name', ORG_NAME);
   localStorage.setItem('anthropic_key', ANTHROPIC_KEY);
   showToast('設定を保存しました','success');
 }
