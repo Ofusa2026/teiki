@@ -572,7 +572,7 @@ body.focus-mode .focus-hide { display:none !important; }
   <div id="topbar">
     <div>
       <span class="topbar-title" id="topbar-title">ダッシュボード</span>
-      <span class="topbar-sub" id="topbar-sub">OFUSA 定期届出管理 <span style="font-size:10px;color:var(--text3)">ver.20260410.05</span></span>
+      <span class="topbar-sub" id="topbar-sub">OFUSA 定期届出管理 <span style="font-size:10px;color:var(--text3)">ver.20260410.06</span></span>
     </div>
     <div class="topbar-actions">
       <!-- 集中モードバナー（集中中のみ表示） -->
@@ -2414,7 +2414,7 @@ async function loadAllData() {
       gasGet({action:'getSupportOrgs'})
     ]);
     companies = cos || []; foreigners = fgs || [];
-    if (sos) { supportOrgs = sos; }
+    if (sos && Array.isArray(sos)) { supportOrgs = sos; }
     // GASからのmonthlyデータを既存のlocalと完全マージ（スプシ側を優先）
     if (monthly && monthly.length) {
       salaryData = monthly.map(function(m){
@@ -2461,7 +2461,7 @@ function loadLocalCache() {
   if (c) companies = JSON.parse(c);
   if (f) foreigners = JSON.parse(f);
   if (s) salaryData = JSON.parse(s);
-  if (so) supportOrgs = JSON.parse(so);
+  if (so) { var _so = JSON.parse(so); supportOrgs = Array.isArray(_so) ? _so : []; }
   renderAll();
 }
 function saveLocalCache() {
