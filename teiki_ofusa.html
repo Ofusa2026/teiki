@@ -572,7 +572,7 @@ body.focus-mode .focus-hide { display:none !important; }
   <div id="topbar">
     <div>
       <span class="topbar-title" id="topbar-title">ダッシュボード</span>
-      <span class="topbar-sub" id="topbar-sub">OFUSA 定期届出管理 <span style="font-size:10px;color:var(--text3)">ver.20260410.08</span></span>
+      <span class="topbar-sub" id="topbar-sub">OFUSA 定期届出管理 <span style="font-size:10px;color:var(--text3)">ver.20260410.09</span></span>
     </div>
     <div class="topbar-actions">
       <!-- 集中モードバナー（集中中のみ表示） -->
@@ -2333,11 +2333,11 @@ function normStatus(f) {
   return '';
 }
 
-var GAS_URL = localStorage.getItem('gas_url') || 'https://script.google.com/macros/s/AKfycbxBnw2pHOWAQ_EL4Djkp40CvWAy2vGvDXnnubylhtPFzE8jSjtBxXrcNTB_JPPAmweO/exec';
-var MAIL_GAS_URL = localStorage.getItem('mail_gas_url') || '';
-var ANTHROPIC_KEY = localStorage.getItem('anthropic_key') || '';
-var FISCAL_YEAR = localStorage.getItem('fiscal_year') || '2025';
-var ORG_NAME = localStorage.getItem('org_name') || '大房行政書士法人';
+var GAS_URL = localStorage.getItem('ofusa_gas_url') || 'https://script.google.com/macros/s/AKfycbxBnw2pHOWAQ_EL4Djkp40CvWAy2vGvDXnnubylhtPFzE8jSjtBxXrcNTB_JPPAmweO/exec';
+var MAIL_GAS_URL = localStorage.getItem('ofusa_mail_gas_url') || '';
+var ANTHROPIC_KEY = localStorage.getItem('ofusa_anthropic_key') || '';
+var FISCAL_YEAR = localStorage.getItem('ofusa_fiscal_year') || '2025';
+var ORG_NAME = localStorage.getItem('ofusa_org_name') || '大房行政書士法人';
 var companies = [], foreigners = [], salaryData = [], supportOrgs = [];
 var selectedCompany = null, editingCompanyId = null, editingForeignerId = null;
 var importRows = [], fgImportRows = [];
@@ -2362,10 +2362,10 @@ function saveSettings() {
   MAIL_GAS_URL = (document.getElementById('setting-mail-gas-url')||{value:''}).value.trim();
   FISCAL_YEAR = document.getElementById('setting-year').value.trim();
   ANTHROPIC_KEY = document.getElementById('setting-anthropic-key').value.trim();
-  localStorage.setItem('gas_url', GAS_URL);
-  localStorage.setItem('mail_gas_url', MAIL_GAS_URL);
-  localStorage.setItem('fiscal_year', FISCAL_YEAR);
-  localStorage.setItem('anthropic_key', ANTHROPIC_KEY);
+  localStorage.setItem('ofusa_gas_url', GAS_URL);
+  localStorage.setItem('ofusa_mail_gas_url', MAIL_GAS_URL);
+  localStorage.setItem('ofusa_fiscal_year', FISCAL_YEAR);
+  localStorage.setItem('ofusa_anthropic_key', ANTHROPIC_KEY);
   showToast('設定を保存しました','success');
 }
 async function testConnection() {
@@ -2445,10 +2445,10 @@ async function loadAllData() {
   } catch(e) { setApiStatus(false); showToast('取得失敗: '+e.message,'error'); loadLocalCache(); }
 }
 function loadLocalCache() {
-  var c = localStorage.getItem('teiki_companies');
-  var f = localStorage.getItem('teiki_foreigners');
-  var s = localStorage.getItem('teiki_salary');
-  var so = localStorage.getItem('teiki_support_orgs');
+  var c = localStorage.getItem('ofusa_companies');
+  var f = localStorage.getItem('ofusa_foreigners');
+  var s = localStorage.getItem('ofusa_salary');
+  var so = localStorage.getItem('ofusa_support_orgs');
   if (c) companies = JSON.parse(c);
   if (f) foreigners = JSON.parse(f);
   if (s) salaryData = JSON.parse(s);
@@ -2457,10 +2457,10 @@ function loadLocalCache() {
 }
 function saveLocalCache() {
   try {
-    localStorage.setItem('teiki_companies', JSON.stringify(companies));
-    localStorage.setItem('teiki_support_orgs', JSON.stringify(supportOrgs));
-    localStorage.setItem('teiki_foreigners', JSON.stringify(foreigners));
-    localStorage.setItem('teiki_salary', JSON.stringify(salaryData));
+    localStorage.setItem('ofusa_companies', JSON.stringify(companies));
+    localStorage.setItem('ofusa_support_orgs', JSON.stringify(supportOrgs));
+    localStorage.setItem('ofusa_foreigners', JSON.stringify(foreigners));
+    localStorage.setItem('ofusa_salary', JSON.stringify(salaryData));
   } catch(e){}
 }
 function renderAll() { updateBadges(); renderDashStats(); renderDashTable(); renderCompanyTable(); renderForeignerTable(); renderSalaryCoList(); renderCalcCoList(); renderDocCoList(); updateFgCompanyDatalist(); renderSupportOrgTable(); }
