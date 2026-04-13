@@ -509,7 +509,7 @@ body.focus-mode .focus-hide { display:none !important; }
     <div class="logo-badge"><span>KMT</span></div>
     <div class="sidebar-title">定期届出<br>管理システム</div>
     <div class="sidebar-sub">2025年度 対象</div>
-    <div class="sidebar-ver" id="sidebar-ver">v2026.04.10.01</div>
+    <div class="sidebar-ver" id="sidebar-ver">v2026.04.07.18</div>
   </div>
 
   <div class="nav-section">
@@ -565,7 +565,7 @@ body.focus-mode .focus-hide { display:none !important; }
   <div id="topbar">
     <div>
       <span class="topbar-title" id="topbar-title">ダッシュボード</span>
-      <span class="topbar-sub" id="topbar-sub">KMT 定期届出 2025年度 ver.20260410.01</span>
+      <span class="topbar-sub" id="topbar-sub">KMT 定期届出 2025年度 ver.20260407.18</span>
     </div>
     <div class="topbar-actions">
       <!-- 集中モードバナー（集中中のみ表示） -->
@@ -1024,8 +1024,6 @@ body.focus-mode .focus-hide { display:none !important; }
       <div id="knowledge-list"></div>
     </div>
     </div>
-
-    </div><!-- /panel-knowledge -->
 
     <div id="panel-settings" class="panel">
         <div class="table-wrapper">
@@ -2240,7 +2238,7 @@ document.addEventListener('DOMContentLoaded', function() {
       if (e.target === overlay) closeModal(overlay.id);
     });
   });
-  console.log('%c定期届出管理システム v2026.04.10.01%c | companies:'+companies.length+' foreigners:'+foreigners.length, 'background:#1e3a5f;color:#fff;padding:2px 8px;border-radius:3px;font-weight:bold','color:#64748b');
+  console.log('%c定期届出管理システム v2026.04.07.18%c | companies:'+companies.length+' foreigners:'+foreigners.length, 'background:#1e3a5f;color:#fff;padding:2px 8px;border-radius:3px;font-weight:bold','color:#64748b');
   if (GAS_URL) loadAllData();
   else { showToast('設定画面でGAS URLを入力してください','warn'); switchPanel('settings',document.querySelector('[data-panel=settings]')); }
 });
@@ -3291,8 +3289,13 @@ function applyTextImport(text, coName, nameEn, yearKey, fid) {
     result.data.scheduledHours = _jitsu || result.data.scheduledHours;
   }
 
+  // テキストから対象月数を取得
+  var parsedMonths = (function(){
+    var m = text.match(/対象月数[	\s：:]+(\d+)/);
+    return m ? parseInt(m[1]) : null;
+  })();
   var existingIdx = salaryData.findIndex(function(s){ return s.companyName===coName && s.nameEn===nameEn && s.yearYear===yearKey; });
-  var currentMonths = (existingIdx >= 0 && salaryData[existingIdx].months) ? parseInt(salaryData[existingIdx].months) : 12;
+  var currentMonths = parsedMonths || (existingIdx >= 0 && salaryData[existingIdx].months ? parseInt(salaryData[existingIdx].months) : 12);
   var entry = Object.assign({companyName: coName, nameEn: nameEn, yearYear: yearKey, months: currentMonths}, result.data, {months: currentMonths});
   if (existingIdx >= 0) salaryData[existingIdx] = Object.assign(salaryData[existingIdx], entry);
   else salaryData.push(entry);
@@ -5188,34 +5191,34 @@ function parseSalaryText(text) {
     workDays:            getTotal('出勤日数（平日）', false) || getTotal('実労働日数', false) || getTotal('出勤基礎日数', false),
     scheduledHours:      (function(){
       // 実働時間・所定労働時間・残業・休日をそのまま返す（後でユーザーが形式を選択）
-      var jitsu = getTotal('実働時間', false);
+      var jitsu = getTotal('実働時間', false) || getTotal('所定内実労働時間', false);
       var shotei = getTotal('所定労働時間', false) || getTotal('所定時間（平日）', false);
       return jitsu || shotei || 0;
     })(),
     _scheduledHoursRaw: (function(){
       // 形式選択用の生データ
-      var jitsu = getTotal('実働時間', false);
-      var ot = getTotal('普通残業時間', false) || 0;
+      var jitsu = getTotal('実働時間', false) || getTotal('所定内実労働時間', false);
+      var ot = getTotal('普通残業時間', false) || getTotal('超過実労働時間', false) || 0;
       var hol = getTotal('休日勤務時間', false) || 0;
       var shotei = getTotal('所定労働時間', false) || getTotal('所定時間（平日）', false);
       return { jitsu: jitsu, ot: ot, hol: hol, shotei: shotei };
     })(),
     overtimeHours:       (function(){
-      var ot = getTotal('普通残業時間', false) || 0;
+      var ot = getTotal('普通残業時間', false) || getTotal('超過実労働時間', false) || 0;
       var hol = getTotal('休日勤務時間', false) || 0;
       return Math.round((ot + hol) * 10) / 10 || getTotal('法定外時間（平日）', false);
     })(),
-    totalPay:            getTotal('支給合計', true),
-    overtimePay:         (ot1+ot2) || null,
-    commuteAllowance:    commuteTotal || null,
-    attendanceAllowance: attendAmt || null,
-    familyAllowance:     familyAmt || null,
+    totalPay:            getTotal('支給合計', true) || getTotal('現金給与総額', true),
+    overtimePay:         (ot1+ot2) || getTotal('うち超過労働給与', true) || null,
+    commuteAllowance:    commuteTotal || getTotal('うち通勤手当', true) || null,
+    attendanceAllowance: attendAmt || getTotal('うち精皆勤手当', true) || null,
+    familyAllowance:     familyAmt || getTotal('うち家族手当', true) || null,
     deductions:          getTotal('控除合計', true),
-    deductFood:          deductFood || null,
-    deductHousing:       deductHousing || null,
-    deductTax:           deductTaxAmt || null,
-    deductOther:         deductOtherAmt || null,
-    bonus:               0,
+    deductFood:          deductFood || getTotal('控除①食費', true) || null,
+    deductHousing:       deductHousing || getTotal('控除②居住費', true) || null,
+    deductTax:           deductTaxAmt || getTotal('控除③税・社保', true) || null,
+    deductOther:         deductOtherAmt || getTotal('控除④その他', true) || null,
+    bonus:               getTotal('賞与', true) || 0,
   };
   // nullを除去
   Object.keys(data).forEach(function(k){ if (data[k] === null) delete data[k]; });
