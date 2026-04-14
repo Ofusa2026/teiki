@@ -565,7 +565,7 @@ body.focus-mode .focus-hide { display:none !important; }
   <div id="topbar">
     <div>
       <span class="topbar-title" id="topbar-title">ダッシュボード</span>
-      <span class="topbar-sub" id="topbar-sub">KMT 定期届出 2025年度 ver.20260410.04</span>
+      <span class="topbar-sub" id="topbar-sub">KMT 定期届出 2025年度 ver.20260410.05</span>
     </div>
     <div class="topbar-actions">
       <!-- 集中モードバナー（集中中のみ表示） -->
@@ -5316,25 +5316,26 @@ function parseSalaryText(text) {
 
   // 対象月数はUI側で設定されているため、ここでは推測しない
 
-  var ot1 = getTotal('残業手当(支給)', true) || getTotal('普通残業手当', true) || 0;
+  var ot1 = getTotal('残業手当(支給)', true) || getTotal('普通残業手当', true) || getTotal('うち超過労働給与', true) || 0;
   var ot2 = getTotal('深夜残業手当(支給)', true) || getTotal('休日勤務手当', true) || 0;
-  var commute1 = getTotal('通勤手当/課税(支給)', true) || 0;
+  var commute1 = getTotal('通勤手当/課税(支給)', true) || getTotal('うち通勤手当', true) || 0;
   var commute2 = getTotal('通勤手当/非課(支給)', true) || 0;
   var commuteTotal = commute1 + commute2;
-  var familyAmt    = getTotal('家族手当(支給)', true) || 0;
-  var attendAmt    = getTotal('精皆勤手当(支給)', true) || getTotal('皆勤手当(支給)', true) || 0;
-  var deductFood   = getTotal('食費控除(控除)', true) || getTotal('食費(控除)', true) || 0;
-  var deductHousing= getTotal('家賃控除(控除)', true) || getTotal('居住費(控除)', true) || getTotal('住宅費', true) || 0;
+  var familyAmt    = getTotal('家族手当(支給)', true) || getTotal('うち家族手当', true) || 0;
+  var attendAmt    = getTotal('精皆勤手当(支給)', true) || getTotal('皆勤手当(支給)', true) || getTotal('うち精皆勤手当', true) || 0;
+  var deductFood   = getTotal('食費控除(控除)', true) || getTotal('食費(控除)', true) || getTotal('控除①食費', true) || 0;
+  var deductHousing= getTotal('家賃控除(控除)', true) || getTotal('居住費(控除)', true) || getTotal('住宅費', true) || getTotal('控除②居住費', true) || 0;
   var socialIns    = getTotal('社会保険料合計', true) || getTotal('社会保険料計', true) || 0;
   var incomeTax    = getTotal('所得税(控除)', true) || getTotal('所得税', true) || 0;
   var residentTax  = getTotal('住民税(控除)', true) || getTotal('住民税', true) || 0;
   var deductTaxAmt = socialIns + incomeTax + residentTax;
+  // 控除③税・社保 がある場合はそちらを優先
+  var deductTax3 = getTotal('控除③税・社保', true) || 0;
+  if (deductTax3 > 0) deductTaxAmt = deductTax3;
+  var deductOther4 = getTotal('控除④その他', true) || 0;
   var deductTotalAmt = getTotal('控除合計', true) || 0;
-  // deductOtherは通常0（住宅費・食費・税社保以外の控除）
-  var deductOtherAmt = Math.max(0, deductTotalAmt - deductFood - deductHousing - deductTaxAmt);
-  // 住宅費が取れていない場合、deductOtherが住宅費相当になってしまうので上限を設ける
-  if (deductHousing === 0 && deductOtherAmt > 0) {
-    // 住宅費として使う（控除合計 - 税社保 - 食費 の残りを住宅費とみなす）
+  var deductOtherAmt = deductOther4 || Math.max(0, deductTotalAmt - deductFood - deductHousing - deductTaxAmt);
+  if (deductHousing === 0 && deductOtherAmt > 0 && deductOther4 === 0) {
     deductHousing = deductOtherAmt;
     deductOtherAmt = 0;
   }
@@ -5347,27 +5348,27 @@ function parseSalaryText(text) {
   var bonusAmt = getTotal('賞与', true) || 0;
 
   var data = {
-    workDays:            getTotal('出勤日数（平日）', false) || getTotal('実労働日数', false) || getTotal('出勤基礎日数', false),
+    workDays:            getTotal('出勤日数（平日）', false) || getTotal('実労働日数', false) || getTotal('出勤基礎日数', false) || getTotal('実労働日数', true),
     scheduledHours:      (function(){
       // 実働時間・所定労働時間・残業・休日をそのまま返す（後でユーザーが形式を選択）
-      var jitsu = getTotal('実働時間', false);
+      var jitsu = getTotal('実働時間', false) || getTotal('所定内実労働時間', true);
       var shotei = getTotal('所定労働時間', false) || getTotal('所定時間（平日）', false);
       return jitsu || shotei || 0;
     })(),
     _scheduledHoursRaw: (function(){
       // 形式選択用の生データ
-      var jitsu = getTotal('実働時間', false);
-      var ot = getTotal('普通残業時間', false) || 0;
+      var jitsu = getTotal('実働時間', false) || getTotal('所定内実労働時間', true);
+      var ot = getTotal('普通残業時間', false) || getTotal('超過実労働時間', true) || 0;
       var hol = getTotal('休日勤務時間', false) || 0;
       var shotei = getTotal('所定労働時間', false) || getTotal('所定時間（平日）', false);
       return { jitsu: jitsu, ot: ot, hol: hol, shotei: shotei };
     })(),
     overtimeHours:       (function(){
-      var ot = getTotal('普通残業時間', false) || 0;
+      var ot = getTotal('普通残業時間', false) || getTotal('超過実労働時間', true) || 0;
       var hol = getTotal('休日勤務時間', false) || 0;
       return Math.round((ot + hol) * 10) / 10 || getTotal('法定外時間（平日）', false);
     })(),
-    totalPay:            getTotal('支給合計', true),
+    totalPay:            getTotal('支給合計', true) || getTotal('現金給与総額', true),
     overtimePay:         (ot1+ot2) || null,
     commuteAllowance:    commuteTotal || null,
     attendanceAllowance: attendAmt || null,
