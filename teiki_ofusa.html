@@ -572,7 +572,7 @@ body.focus-mode .focus-hide { display:none !important; }
   <div id="topbar">
     <div>
       <span class="topbar-title" id="topbar-title">ダッシュボード</span>
-      <span class="topbar-sub" id="topbar-sub">OFUSA 定期届出管理 <span style="font-size:10px;color:var(--text3)">ver.20260410.09</span></span>
+      <span class="topbar-sub" id="topbar-sub">OFUSA 定期届出管理 <span style="font-size:10px;color:var(--text3)">ver.20260410.12</span></span>
     </div>
     <div class="topbar-actions">
       <!-- 集中モードバナー（集中中のみ表示） -->
@@ -1780,6 +1780,7 @@ body.focus-mode .focus-hide { display:none !important; }
   <button class="toast-close" onclick="hideToast()">✕</button>
 </div>
 
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script>
   var SEND_MAIL = 'k.sakamoto' + '@' + 'gyosei-cambo.com';
 
@@ -2920,10 +2921,14 @@ var salYearTab = 'prev';
 function renderSalaryInput() {
   if (!selectedCompany) return;
   var fgs=foreigners.filter(function(f){return resolveCompanyName(f.companyName)===selectedCompany.name&&normStatus(f)==='在職';}), co=selectedCompany;
-  var html='<div class="table-wrapper"><div class="table-header"><span class="table-title">給与データ入力 — '+esc(co.name)+'</span><span class="table-count">'+fgs.length+'名</span></div><div style="padding:16px">';
+  var html='<div class="table-wrapper"><div class="table-header"><span class="table-title">給与データ入力 — '+esc(co.name)+'</span><span class="table-count">'+fgs.length+'名</span>' +
+    '<button class="btn btn-secondary btn-sm" style="margin-left:auto" onclick="openSalaryImportModal(\''+esc(co.name)+'\')">＋ 人材追加/取込</button>' +
+    '</div><div style="padding:16px">';
 
   if (!fgs.length) {
-    html+='<div class="empty-state"><div class="empty-icon">👤</div><div class="empty-text">在職中の外国人がいません</div></div>';
+    html+='<div class="empty-state"><div class="empty-icon">👤</div><div class="empty-text">在職中の外国人がいません</div>' +
+      '<button class="btn btn-primary" style="margin-top:12px" onclick="openSalaryImportModal(\''+esc(co.name)+'\')">' +
+      '📋 テキスト/Excelで人材を追加して取込</button></div>';
   } else {
     // _fgYearTabで各人材の年度を管理
     if (!window._fgYearTab) window._fgYearTab = {};
@@ -3349,6 +3354,91 @@ function confirmBulkImport(dataList, coName, yearKey) {
 
 
 // ===== テキスト貼り付けで給与データ取込 =====
+
+// ===== 給与データ 人材選択/新規追加取込モーダル =====
+function openSalaryImportModal(coName) {
+  var existing = document.getElementById('modal-salary-import');
+  if (existing) existing.remove();
+
+  var fgs = foreigners.filter(function(f){
+    return resolveCompanyName(f.companyName) === coName && normStatus(f) === '在職';
+  });
+
+  var modal = document.createElement('div');
+  modal.id = 'modal-salary-import';
+  modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:9999;display:flex;align-items:center;justify-content:center';
+
+  var listHtml = '';
+  if (fgs.length) {
+    var btns = fgs.map(function(f){
+      var btn = document.createElement('button');
+      btn.className = 'btn btn-secondary';
+      btn.style.cssText = 'text-align:left;font-size:13px;padding:8px 12px';
+      btn.textContent = '\u{1F464} ' + f.nameEn;
+      btn.dataset.co = coName;
+      btn.dataset.name = f.nameEn;
+      btn.onclick = function(){ openSalaryImportModalFromSalary(this); };
+      return btn.outerHTML;
+    }).join('');
+    listHtml = '<div style="margin-bottom:14px"><div style="font-size:12px;font-weight:700;color:var(--text2);margin-bottom:8px">登録済みの人材から選ぶ：</div><div id="sal-import-fg-list" style="display:flex;flex-direction:column;gap:6px">' + btns + '</div></div><div style="border-top:1px solid var(--border);margin:14px 0"></div>';
+  }
+
+  modal.innerHTML =
+    '<div style="background:#fff;border-radius:12px;padding:0;max-width:500px;width:95%;box-shadow:0 8px 32px rgba(0,0,0,.2)">' +
+    '<div style="padding:16px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between">' +
+      '<span style="font-size:15px;font-weight:700">\u{1F4CB} \u7d66\u4e0e\u30c7\u30fc\u30bf\u53d6\u8fbc</span>' +
+      '<button id="sal-import-close" style="background:none;border:none;font-size:18px;cursor:pointer;color:var(--text3)">\u2715</button>' +
+    '</div>' +
+    '<div style="padding:20px">' +
+      listHtml +
+      '<div style="font-size:12px;font-weight:700;color:var(--text2);margin-bottom:8px">\u65b0\u898f\u4eba\u6750\u3068\u3057\u3066\u8ffd\u52a0\u3057\u3066\u53d6\u8fbc\uff1a</div>' +
+      '<div style="display:flex;gap:8px">' +
+        '<input type="text" id="new-fg-name-input" class="input" placeholder="\u6c0f\u540d\uff08\u82f1\u5b57\uff09\u4f8b\uff09NGUYEN VAN A" style="flex:1">' +
+        '<button id="sal-import-new-btn" class="btn btn-primary">\u8ffd\u52a0\u3057\u3066\u53d6\u8fbc</button>' +
+      '</div>' +
+      '<div style="font-size:11px;color:var(--text3);margin-top:6px">\u203b \u5916\u56fd\u4eba\u30de\u30b9\u30bf\u306b\u81ea\u52d5\u767b\u9332\u3055\u308c\u307e\u3059</div>' +
+    '</div>' +
+    '</div>';
+
+  document.body.appendChild(modal);
+  modal.addEventListener('click', function(e){ if(e.target===modal) modal.remove(); });
+  document.getElementById('sal-import-close').onclick = function(){ modal.remove(); };
+  document.getElementById('sal-import-new-btn').onclick = function(){ openSalaryImportForNew(coName); };
+
+  // 登録済みボタンのクリックイベントをDOMで設定
+  var list = document.getElementById('sal-import-fg-list');
+  if (list) {
+    list.querySelectorAll('button').forEach(function(btn){
+      btn.onclick = function(){ openSalaryImportModalFromSalary(this); };
+    });
+  }
+
+  setTimeout(function(){ var el=document.getElementById('new-fg-name-input'); if(el) el.focus(); }, 100);
+}
+
+function openSalaryImportModalFromSalary(btn) {
+  var coName = btn.getAttribute('data-co') || btn.dataset.co;
+  var nameEn = btn.getAttribute('data-name') || btn.dataset.name;
+  document.getElementById('modal-salary-import').remove();
+  var fid = nameEn.replace(/\s/g,'_');
+  openTextImportModal(coName, nameEn, 'prev', fid);
+}
+
+function openSalaryImportForNew(coName) {
+  var nameEn = (document.getElementById('new-fg-name-input').value||'').trim().toUpperCase();
+  if (!nameEn) { showToast('\u6c0f\u540d\u3092\u5165\u529b\u3057\u3066\u304f\u3060\u3055\u3044', 'warn'); return; }
+  autoAddForeigner(coName, nameEn);
+  document.getElementById('modal-salary-import').remove();
+  renderSalaryInput();
+  setTimeout(function(){
+    var fid = nameEn.replace(/\s/g,'_');
+    openTextImportModal(coName, nameEn, 'prev', fid);
+  }, 300);
+}
+
+
+
+
 function openTextImportModal(coName, nameEn, yearKey, fid) {
   var existing = document.getElementById('modal-text-import');
   if (existing) existing.remove();
@@ -3368,6 +3458,7 @@ function openTextImportModal(coName, nameEn, yearKey, fid) {
     '</div>' +
     '<div style="padding:12px 20px;border-top:1px solid var(--border);display:flex;gap:8px;justify-content:flex-end">' +
       '<button id="text-import-cancel" class="btn btn-secondary">キャンセル</button>' +
+      '<label class="btn btn-secondary" style="cursor:pointer">📊 Excel取込<input type="file" id="xlsx-import-file" accept=".xlsx" style="display:none"></label>' +
       '<button id="text-import-confirm" class="btn btn-primary">✅ 解析して取込</button>' +
     '</div>' +
     '</div>';
@@ -3381,12 +3472,69 @@ function openTextImportModal(coName, nameEn, yearKey, fid) {
     applyTextImport(text, coName, nameEn, yearKey, fid);
     modal.remove();
   };
+  modal.querySelector('#xlsx-import-file').onchange = function(e) {
+    var file = e.target.files[0];
+    if (!file) return;
+    applyXlsxImport(file, coName, nameEn, yearKey, fid, modal);
+  };
+}
+
+async function applyXlsxImport(file, coName, nameEn, yearKey, fid, modal) {
+  showToast('Excelを読み込み中...', 'info');
+  try {
+    var ab = await file.arrayBuffer();
+    var wb = XLSX.read(ab, {type:'array'});
+    var textSheet = wb.SheetNames.find(function(n){ return n === 'テキスト'; });
+    if (textSheet) {
+      var ws = wb.Sheets[textSheet];
+      var rows = XLSX.utils.sheet_to_json(ws, {header:1, defval:''});
+      var lines = rows.map(function(r){ return (r[0]||'') + (r[1]!==undefined && r[1]!=='' ? '	'+r[1] : ''); });
+      var text = lines.join('\n');
+      document.getElementById('text-import-area').value = text;
+      applyTextImport(text, coName, nameEn, yearKey, fid);
+      // 前々年度も取込
+      var prevYearKey = yearKey === '前年度' ? '前々年度' : (parseInt(yearKey)-1).toString();
+      var prevIdx = rows.findIndex(function(r){ return String(r[0]).includes('前々年度'); });
+      if (prevIdx >= 0) {
+        var prevRows = rows.slice(prevIdx);
+        var prevLines = prevRows.map(function(r){ return (r[0]||'') + (r[1]!==undefined && r[1]!=='' ? '	'+r[1] : ''); });
+        applyTextImport(prevLines.join('\n'), coName, nameEn, prevYearKey, fid);
+      }
+      autoAddForeigner(coName, nameEn);
+      if (modal) modal.remove();
+      showToast('Excel取込完了: ' + nameEn, 'success');
+    } else {
+      showToast('「テキスト」シートが見つかりません', 'warn');
+    }
+  } catch(ex) {
+    showToast('Excel読込エラー: ' + ex.message, 'error');
+  }
+}
+
+function autoAddForeigner(coName, nameEn) {
+  if (!nameEn || !coName) return;
+  var exists = foreigners.find(function(f){ return f.nameEn === nameEn && f.companyName === coName; });
+  if (!exists) {
+    var newFg = { companyName: coName, nameEn: nameEn, isActive: '〇', status: '在職', field: '' };
+    foreigners.push(newFg);
+    saveLocalCache();
+    if (GAS_URL) gasPost(Object.assign({action:'upsertForeigner'}, newFg)).catch(function(e){});
+    showToast(nameEn + ' を外国人マスタに追加しました', 'info');
+    updateFgCompanyDatalist();
+  }
 }
 
 function applyTextImport(text, coName, nameEn, yearKey, fid) {
-  var jitsuMode = (document.getElementById('jitsu-mode_'+fid)||{value:'raw'}).value;
   var result = parseSalaryText(text);
   if (!result || !result.data) result = { nameEn: nameEn, data: {} };
+
+  // 実働時間区分をテキストから自動設定
+  var jitsuKubun = result.data._jitsuKubun;
+  delete result.data._jitsuKubun;
+  var jitsuMode = 'raw';
+  if (jitsuKubun && jitsuKubun.includes('含む')) jitsuMode = 'sub';
+  var jitsuSel = document.getElementById('jitsu-mode_'+fid);
+  if (jitsuSel && jitsuKubun) jitsuSel.value = jitsuMode;
 
   // 実働時間形式を適用
   var raw = result.data._scheduledHoursRaw;
@@ -5294,6 +5442,13 @@ function parseSalaryText(text) {
     deductOtherAmt = 0;
   }
 
+  // 実働時間区分を読み取る
+  var jitsuKubunMatch = text.match(/\u5b9f\u50cd\u6642\u9593\u533a\u5206[\t ]*([^\r\n]+)/);
+  var jitsuKubun = jitsuKubunMatch ? jitsuKubunMatch[1].trim() : null;
+
+  // 賞与
+  var bonusAmt = getTotal('賞与', true) || 0;
+
   var data = {
     workDays:            getTotal('出勤日数（平日）', false) || getTotal('実労働日数', false) || getTotal('出勤基礎日数', false),
     scheduledHours:      (function(){
@@ -5325,7 +5480,8 @@ function parseSalaryText(text) {
     deductHousing:       deductHousing || null,
     deductTax:           deductTaxAmt || null,
     deductOther:         deductOtherAmt || null,
-    bonus:               0,
+    bonus:               bonusAmt || 0,
+    _jitsuKubun:         jitsuKubun,
   };
   // nullを除去
   Object.keys(data).forEach(function(k){ if (data[k] === null) delete data[k]; });
