@@ -509,7 +509,7 @@ body.focus-mode .focus-hide { display:none !important; }
     <div class="logo-badge"><span>KMT</span></div>
     <div class="sidebar-title">定期届出<br>管理システム</div>
     <div class="sidebar-sub">2025年度 対象</div>
-    <div class="sidebar-ver" id="sidebar-ver">v2026.04.10.04</div>
+    <div class="sidebar-ver" id="sidebar-ver">v2026.04.15.01</div>
   </div>
 
   <div class="nav-section">
@@ -565,7 +565,7 @@ body.focus-mode .focus-hide { display:none !important; }
   <div id="topbar">
     <div>
       <span class="topbar-title" id="topbar-title">ダッシュボード</span>
-      <span class="topbar-sub" id="topbar-sub">KMT 定期届出 2025年度 ver.20260410.05</span>
+      <span class="topbar-sub" id="topbar-sub">KMT 定期届出 2025年度 ver.20260415.01</span>
     </div>
     <div class="topbar-actions">
       <!-- 集中モードバナー（集中中のみ表示） -->
@@ -2241,7 +2241,7 @@ document.addEventListener('DOMContentLoaded', function() {
       if (e.target === overlay) closeModal(overlay.id);
     });
   });
-  console.log('%c定期届出管理システム v2026.04.10.04%c | companies:'+companies.length+' foreigners:'+foreigners.length, 'background:#1e3a5f;color:#fff;padding:2px 8px;border-radius:3px;font-weight:bold','color:#64748b');
+  console.log('%c定期届出管理システム v2026.04.15.01%c | companies:'+companies.length+' foreigners:'+foreigners.length, 'background:#1e3a5f;color:#fff;padding:2px 8px;border-radius:3px;font-weight:bold','color:#64748b');
   if (GAS_URL) loadAllData();
   else { showToast('設定画面でGAS URLを入力してください','warn'); switchPanel('settings',document.querySelector('[data-panel=settings]')); }
 });
@@ -4007,7 +4007,7 @@ function selectDocCompany(name) {
 }
 function renderDocItem(co,d) {
   if (!d.req) return '<div class="doc-item not-needed"><span class="doc-name" style="text-decoration:line-through;color:var(--text3)">'+esc(d.name)+'</span><span class="doc-who">'+d.who+'</span><span class="badge badge-gray" style="margin-left:auto">不要</span></div>';
-  var status=co[d.key]||'未', isDone=status==='完了'||status==='確認OK';
+  var status=co[d.key]||'未', isDone=status==='完了'||status==='確認OK'||status==='受領済';
   var opts=d.who==='大房作成'?['未','作成中','署名待ち','受領済','完了']:['未','依頼済','受領済','確認OK'];
   return '<div class="doc-item '+(isDone?'done':'')+'" id="docitem-'+d.key+'">'+
     '<span class="doc-name">'+esc(d.name)+'</span>'+
@@ -4019,7 +4019,7 @@ function updateDocDisplay(key) {
   var sel=document.getElementById('docsel-'+key), item=document.getElementById('docitem-'+key);
   if (!sel||!item) return;
   var v=sel.value;
-  item.className='doc-item '+(v==='完了'||v==='確認OK'?'done':'');
+  item.className='doc-item '+(v==='完了'||v==='確認OK'||v==='受領済'?'done':'');
 }
 async function saveDocStatus(coName) {
   var co=companies.find(c=>c.name===coName); if(!co) return;
