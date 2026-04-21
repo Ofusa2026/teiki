@@ -509,7 +509,7 @@ body.focus-mode .focus-hide { display:none !important; }
     <div class="logo-badge"><span>KMT</span></div>
     <div class="sidebar-title">定期届出<br>管理システム</div>
     <div class="sidebar-sub">2025年度 対象</div>
-    <div class="sidebar-ver" id="sidebar-ver">v2026.04.21.03</div>
+    <div class="sidebar-ver" id="sidebar-ver">v2026.04.21.04</div>
   </div>
 
   <div class="nav-section">
@@ -565,7 +565,7 @@ body.focus-mode .focus-hide { display:none !important; }
   <div id="topbar">
     <div>
       <span class="topbar-title" id="topbar-title">ダッシュボード</span>
-      <span class="topbar-sub" id="topbar-sub">KMT 定期届出 2025年度 ver.20260421.03</span>
+      <span class="topbar-sub" id="topbar-sub">KMT 定期届出 2025年度 ver.20260421.04</span>
     </div>
     <div class="topbar-actions">
       <!-- 集中モードバナー（集中中のみ表示） -->
@@ -2241,7 +2241,7 @@ document.addEventListener('DOMContentLoaded', function() {
       if (e.target === overlay) closeModal(overlay.id);
     });
   });
-  console.log('%c定期届出管理システム v2026.04.21.03%c | companies:'+companies.length+' foreigners:'+foreigners.length, 'background:#1e3a5f;color:#fff;padding:2px 8px;border-radius:3px;font-weight:bold','color:#64748b');
+  console.log('%c定期届出管理システム v2026.04.21.04%c | companies:'+companies.length+' foreigners:'+foreigners.length, 'background:#1e3a5f;color:#fff;padding:2px 8px;border-radius:3px;font-weight:bold','color:#64748b');
   if (GAS_URL) loadAllData();
   else { showToast('設定画面でGAS URLを入力してください','warn'); switchPanel('settings',document.querySelector('[data-panel=settings]')); }
 });
@@ -2675,7 +2675,7 @@ function renderCompanyTable() {
       '<td>'+fgBadge+'</td>'+
       '<td>'+salBadge+'</td>'+
       '<td style="max-width:200px">'+missingBadgesHtml(co)+'</td>'+
-      '<td style="max-width:200px;font-size:11px;color:var(--text3)">'+esc(co.note||co.memo||'')+'</td>'+
+      '<td style="max-width:200px;font-size:11px;color:var(--text3)">'+esc(co.note||'')+'</td>'+
       '<td style="white-space:nowrap" onclick="event.stopPropagation()">'+
       '<button class="btn btn-secondary btn-sm" onclick="openDocCheck(\''+esc(co.name)+'\')">書類</button> '+
       '<button class="btn btn-danger btn-sm" onclick="confirmDeleteCompany(\''+esc(co.name)+'\')">削除</button>'+
