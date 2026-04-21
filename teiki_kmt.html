@@ -565,7 +565,7 @@ body.focus-mode .focus-hide { display:none !important; }
   <div id="topbar">
     <div>
       <span class="topbar-title" id="topbar-title">ダッシュボード</span>
-      <span class="topbar-sub" id="topbar-sub">KMT 定期届出 2025年度 ver.20260420.01</span>
+      <span class="topbar-sub" id="topbar-sub">KMT 定期届出 2025年度 ver.20260421.02</span>
     </div>
     <div class="topbar-actions">
       <!-- 集中モードバナー（集中中のみ表示） -->
@@ -2675,7 +2675,7 @@ function renderCompanyTable() {
       '<td>'+fgBadge+'</td>'+
       '<td>'+salBadge+'</td>'+
       '<td style="max-width:200px">'+missingBadgesHtml(co)+'</td>'+
-      '<td style="max-width:200px;font-size:11px;color:var(--text3)">'+esc(co.note||'')+'</td>'+
+      '<td style="max-width:200px;font-size:11px;color:var(--text3)">'+esc(co.memo||co.note||'')+'</td>'+
       '<td style="white-space:nowrap" onclick="event.stopPropagation()">'+
       '<button class="btn btn-secondary btn-sm" onclick="openDocCheck(\''+esc(co.name)+'\')">書類</button> '+
       '<button class="btn btn-danger btn-sm" onclick="confirmDeleteCompany(\''+esc(co.name)+'\')">削除</button>'+
@@ -4025,17 +4025,54 @@ function updateDocDisplay(key) {
   if (!sel||!item) return;
   var v=sel.value;
   item.className='doc-item '+(v==='完了'||v==='確認OK'||v==='受領済'?'done':'');
+  // 自動保存
+  var coName = sel.closest('[data-doc-co]') ? sel.closest('[data-doc-co]').dataset.docCo : null;
+  if (!coName) {
+    var area = document.getElementById('doc-detail-area');
+    if (area) { var title = area.querySelector('.table-title'); if (title) coName = title.textContent.replace('書類チェック — ','').trim(); }
+  }
+  if (coName) {
+    if (window._docAutoSaveTimer) clearTimeout(window._docAutoSaveTimer);
+    window._docAutoSaveTimer = setTimeout(function(){ saveDocStatus(coName); }, 800);
+  }
 }
 async function saveDocStatus(coName) {
   var co=companies.find(c=>c.name===coName); if(!co) return;
   var keys=['doc_36_main','doc_36_bessi1','doc_36_bessi2','doc_517or516','doc_129','doc_1111','doc_123','doc_touki','doc_juumin','doc_rodo','doc_shakai','doc_nouzei','doc_juminzei','doc_kyuyo','doc_shoyo'];
   var patch={companyName:coName,fiscalYear:FISCAL_YEAR,action:'upsertReport'};
   keys.forEach(function(k){ var el=document.getElementById('docsel-'+k); if(el){co[k]=el.value;patch[k]=el.value;} });
-  saveLocalCache(); showToast('書類ステータスを保存しました','success');
+  saveLocalCache();
   if(GAS_URL){ gasPost(patch).catch(function(e){console.error('GAS保存エラー',e);}); }
 }
 function openModal(id){
   document.getElementById(id).classList.add('open');
+  if (id === 'modal-foreigner-add') {
+    setTimeout(function(){
+      var modal = document.getElementById('modal-foreigner-add');
+      if (!modal) return;
+      modal.querySelectorAll('input,select,textarea').forEach(function(el){
+        if (!el.dataset.autoSaveWired) {
+          el.dataset.autoSaveWired = '1';
+          el.addEventListener('change', function(){ _autoSaveForeigner(); });
+          el.addEventListener('blur',   function(){ _autoSaveForeigner(); });
+        }
+      });
+    }, 300);
+  }
+  // 所属機関モーダル: 自動保存ワイヤリング
+  if(id==='modal-company-add'){
+    setTimeout(function(){
+      var modal = document.getElementById('modal-company-add');
+      if (!modal) return;
+      modal.querySelectorAll('input[type=text],input[type=password],textarea,select').forEach(function(el){
+        if (!el.dataset.autoSaveWired) {
+          el.dataset.autoSaveWired = '1';
+          el.addEventListener('change', function(){ if(editingCompanyId) _autoSaveCompany(); });
+          el.addEventListener('blur',   function(){ if(editingCompanyId) _autoSaveCompany(); });
+        }
+      });
+    }, 300);
+  }
   // 新規追加で開く場合はgoto-salaryボタンを除去
   if(id==='modal-company-add' && !editingCompanyId){
     var old=document.querySelector('#modal-company-add .btn-goto-salary');
@@ -4465,6 +4502,30 @@ function editCompany(name){
     modalFoot2.appendChild(gotoBtn2);
   }
 }
+// ===== 自動保存ユーティリティ =====
+function debounce(fn, delay) {
+  var t;
+  return function() { clearTimeout(t); t = setTimeout(fn, delay); };
+}
+
+var _autoSaveCompany = debounce(function() {
+  var nameEl = document.getElementById('co-name');
+  if (nameEl && nameEl.value.trim()) {
+    saveCompany._quiet = true;
+    saveCompany().catch(function(){}).finally(function(){ saveCompany._quiet = false; });
+  }
+}, 1500);
+
+var _autoSaveForeigner = debounce(function() {
+  var nameEl = document.getElementById('fg-name-en');
+  var coEl   = document.getElementById('fg-company');
+  if (nameEl && nameEl.value.trim() && coEl && coEl.value.trim()) {
+    saveForeigner._quiet = true;
+    saveForeigner().catch(function(){});
+  }
+}, 1500);
+
+
 async function saveCompany(){
   var name=document.getElementById('co-name').value.trim(); if(!name){showToast('会社名は必須です','warn');return;}
   var data={action:'upsertReport',companyName:name,fiscalYear:document.getElementById('co-fiscal-year').value,status:document.getElementById('co-status').value,
@@ -4474,7 +4535,7 @@ async function saveCompany(){
     loginId1:document.getElementById('co-login-id1').value,loginId2:document.getElementById('co-login-id2').value,
     password:document.getElementById('co-password').value,pwUpdated:document.getElementById('co-pw-updated').value,
     support_org_type:document.getElementById('co-support-type').value,support_org_other:document.getElementById('co-support-other').value,
-    has_non_exec_officer:document.getElementById('non-exec-yes').checked?'✓':'✗',note:document.getElementById('co-note').value,pay_method:(document.getElementById('co-pay-method')||{value:''}).value,
+    has_non_exec_officer:document.getElementById('non-exec-yes').checked?'✓':'✗',memo:document.getElementById('co-note').value,note:document.getElementById('co-note').value,pay_method:(document.getElementById('co-pay-method')||{value:''}).value,
     folderURL:(document.getElementById('co-folder-url')||{value:''}).value};
   data.kijun_result=calcKijunResultFromData(data);
   var officerData = getOfficerData();
@@ -4482,6 +4543,7 @@ async function saveCompany(){
     city:(document.getElementById('co-city')||{value:''}).value,address:document.getElementById('co-address').value,tel:document.getElementById('co-tel').value,email:(document.getElementById('co-email')||{value:''}).value,repName:document.getElementById('co-rep-name').value,
     repTitle:document.getElementById('co-rep-title').value,industry:document.getElementById('co-industry').value,
     contactName:document.getElementById('co-contact-name').value,
+    memo:document.getElementById('co-note').value,
     payMethod:(document.getElementById('co-pay-method')||{value:''}).value,
     loginId1:document.getElementById('co-login-id1').value,loginId2:document.getElementById('co-login-id2').value,
     password:document.getElementById('co-password').value,pwUpdated:document.getElementById('co-pw-updated').value,
@@ -4510,7 +4572,7 @@ async function saveCompany(){
   var idx=companies.findIndex(c=>c.name===name);
   if(idx>=0) companies[idx]=Object.assign(companies[idx],local); else companies.push(local);
   saveLocalCache(); renderAll();
-  showToast(name+' を保存しました','success');
+  if (!saveCompany._quiet) showToast(name+' を保存しました','success');
   // 保存後に「給与データ入力へ」ボタンをフッターに表示（既存は削除して更新）
   var modalFoot = document.querySelector('#modal-company-add .modal-foot');
   if (modalFoot) {
@@ -4555,7 +4617,7 @@ async function saveForeigner(){
   var idx=foreigners.findIndex(f=>f.nameEn===nameEn&&f.companyName===coName);
   if(idx>=0) foreigners[idx]=Object.assign(foreigners[idx],data); else foreigners.push(data);
   saveLocalCache(); updateBadges(); renderForeignerTable(); updateFgCompanyDatalist();
-  closeModal('modal-foreigner-add'); editingForeignerId=null; showToast(nameEn+' を保存しました','success');
+  if (!saveForeigner._quiet) closeModal('modal-foreigner-add'); editingForeignerId=null; if(!saveForeigner._quiet) showToast(nameEn+' を保存しました','success'); saveForeigner._quiet=false;
   if(GAS_URL){ gasPost(data).catch(function(e){console.error('GAS保存エラー',e); showToast('GAS保存に失敗しました','warn');}); }
 }
 function openImportModal(){openModal('modal-import');}
