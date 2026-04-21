@@ -572,7 +572,7 @@ body.focus-mode .focus-hide { display:none !important; }
   <div id="topbar">
     <div>
       <span class="topbar-title" id="topbar-title">ダッシュボード</span>
-      <span class="topbar-sub" id="topbar-sub">OFUSA 定期届出管理 <span style="font-size:10px;color:var(--text3)">ver.20260420.02</span></span>
+      <span class="topbar-sub" id="topbar-sub">OFUSA 定期届出管理 <span style="font-size:10px;color:var(--text3)">ver.20260421.02</span></span>
     </div>
     <div class="topbar-actions">
       <!-- 集中モードバナー（集中中のみ表示） -->
@@ -2783,7 +2783,7 @@ function renderCompanyTable() {
       '<td>'+fgBadge+'</td>'+
       '<td>'+salBadge+'</td>'+
       '<td style="max-width:200px">'+missingBadgesHtml(co)+'</td>'+
-      '<td style="max-width:200px;font-size:11px;color:var(--text3)">'+esc(co.note||'')+'</td>'+
+      '<td style="max-width:200px;font-size:11px;color:var(--text3)">'+esc(co.memo||co.note||'')+'</td>'+
       '<td style="white-space:nowrap" onclick="event.stopPropagation()">'+
       '<button class="btn btn-secondary btn-sm" onclick="openDocCheck(\''+esc(co.name)+'\')">書類</button> '+
       '<button class="btn btn-danger btn-sm" onclick="confirmDeleteCompany(\''+esc(co.name)+'\')">削除</button>'+
@@ -4126,20 +4126,55 @@ function updateDocDisplay(key) {
   if (!sel||!item) return;
   var v=sel.value;
   item.className='doc-item '+(v==='完了'||v==='確認OK'||v==='受領済'?'done':'');
+  // 自動保存
+  var coName = sel.closest('[data-doc-co]') ? sel.closest('[data-doc-co]').dataset.docCo : null;
+  if (!coName) {
+    var area = document.getElementById('doc-detail-area');
+    if (area) { var title = area.querySelector('.table-title'); if (title) coName = title.textContent.replace('書類チェック — ','').trim(); }
+  }
+  if (coName) {
+    if (window._docAutoSaveTimer) clearTimeout(window._docAutoSaveTimer);
+    window._docAutoSaveTimer = setTimeout(function(){ saveDocStatus(coName); }, 800);
+  }
 }
 async function saveDocStatus(coName) {
   var co=companies.find(c=>c.name===coName); if(!co) return;
   var keys=['doc_36_main','doc_36_bessi1','doc_36_bessi2','doc_517or516','doc_129','doc_1111','doc_123','doc_touki','doc_juumin','doc_rodo','doc_shakai','doc_nouzei','doc_juminzei','doc_kyuyo','doc_shoyo'];
   var patch={companyName:coName,fiscalYear:FISCAL_YEAR,action:'upsertReport'};
   keys.forEach(function(k){ var el=document.getElementById('docsel-'+k); if(el){co[k]=el.value;patch[k]=el.value;} });
-  saveLocalCache(); showToast('書類ステータスを保存しました','success');
+  saveLocalCache();
   if(GAS_URL){ gasPost(patch).catch(function(e){console.error('GAS保存エラー',e);}); }
 }
 function openModal(id){
   document.getElementById(id).classList.add('open');
+  if (id === 'modal-foreigner-add') {
+    setTimeout(function(){
+      var modal = document.getElementById('modal-foreigner-add');
+      if (!modal) return;
+      modal.querySelectorAll('input,select,textarea').forEach(function(el){
+        if (!el.dataset.autoSaveWired) {
+          el.dataset.autoSaveWired = '1';
+          el.addEventListener('change', function(){ _autoSaveForeigner(); });
+          el.addEventListener('blur',   function(){ _autoSaveForeigner(); });
+        }
+      });
+    }, 300);
+  }
   // 新規追加で開く場合はgoto-salaryボタンを除去
   if(id==='modal-company-add'){
     var _sonSel=document.getElementById('co-support-org-name'); if(_sonSel) populateSupportOrgSelect(_sonSel, _sonSel.value||'');
+    // 自動保存: 編集中はフォームの変更を検知して自動保存
+    setTimeout(function(){
+      var modal = document.getElementById('modal-company-add');
+      if (!modal) return;
+      modal.querySelectorAll('input[type=text],input[type=password],textarea,select').forEach(function(el){
+        if (!el.dataset.autoSaveWired) {
+          el.dataset.autoSaveWired = '1';
+          el.addEventListener('change', function(){ if(editingCompanyId) _autoSaveCompany(); });
+          el.addEventListener('blur',   function(){ if(editingCompanyId) _autoSaveCompany(); });
+        }
+      });
+    }, 300);
   }
   if(id==='modal-company-add' && !editingCompanyId){
     var old=document.querySelector('#modal-company-add .btn-goto-salary');
@@ -4571,6 +4606,30 @@ function editCompany(name){
     modalFoot2.appendChild(gotoBtn2);
   }
 }
+// ===== 自動保存ユーティリティ =====
+function debounce(fn, delay) {
+  var t;
+  return function() { clearTimeout(t); t = setTimeout(fn, delay); };
+}
+
+var _autoSaveCompany = debounce(function() {
+  var nameEl = document.getElementById('co-name');
+  if (nameEl && nameEl.value.trim()) {
+    saveCompany._quiet = true;
+    saveCompany().catch(function(){}).finally(function(){ saveCompany._quiet = false; });
+  }
+}, 1500);
+
+var _autoSaveForeigner = debounce(function() {
+  var nameEl = document.getElementById('fg-name-en');
+  var coEl   = document.getElementById('fg-company');
+  if (nameEl && nameEl.value.trim() && coEl && coEl.value.trim()) {
+    saveForeigner._quiet = true;
+    saveForeigner().catch(function(){});
+  }
+}, 1500);
+
+
 async function saveCompany(){
   var name=document.getElementById('co-name').value.trim(); if(!name){showToast('会社名は必須です','warn');return;}
   var data={action:'upsertReport',companyName:name,fiscalYear:document.getElementById('co-fiscal-year').value,status:document.getElementById('co-status').value,
@@ -4580,7 +4639,7 @@ async function saveCompany(){
     loginId1:document.getElementById('co-login-id1').value,loginId2:document.getElementById('co-login-id2').value,
     password:document.getElementById('co-password').value,pwUpdated:document.getElementById('co-pw-updated').value,
     support_org_type:document.getElementById('co-support-type').value,support_org_other:document.getElementById('co-support-other').value,supportOrgName:(document.getElementById('co-support-org-name')||{value:''}).value,
-    has_non_exec_officer:document.getElementById('non-exec-yes').checked?'✓':'✗',note:document.getElementById('co-note').value,pay_method:(document.getElementById('co-pay-method')||{value:''}).value,
+    has_non_exec_officer:document.getElementById('non-exec-yes').checked?'✓':'✗',memo:document.getElementById('co-note').value,note:document.getElementById('co-note').value,pay_method:(document.getElementById('co-pay-method')||{value:''}).value,
     folderURL:(document.getElementById('co-folder-url')||{value:''}).value};
   data.kijun_result=calcKijunResultFromData(data);
   var officerData = getOfficerData();
@@ -4588,6 +4647,7 @@ async function saveCompany(){
     city:(document.getElementById('co-city')||{value:''}).value,address:document.getElementById('co-address').value,tel:document.getElementById('co-tel').value,email:(document.getElementById('co-email')||{value:''}).value,repName:document.getElementById('co-rep-name').value,
     repTitle:document.getElementById('co-rep-title').value,industry:document.getElementById('co-industry').value,
     contactName:document.getElementById('co-contact-name').value,
+    memo:document.getElementById('co-note').value,
     payMethod:(document.getElementById('co-pay-method')||{value:''}).value,
     loginId1:document.getElementById('co-login-id1').value,loginId2:document.getElementById('co-login-id2').value,
     password:document.getElementById('co-password').value,pwUpdated:document.getElementById('co-pw-updated').value,
@@ -4616,7 +4676,7 @@ async function saveCompany(){
   var idx=companies.findIndex(c=>c.name===name);
   if(idx>=0) companies[idx]=Object.assign(companies[idx],local); else companies.push(local);
   saveLocalCache(); renderAll();
-  showToast(name+' を保存しました','success');
+  if (!saveCompany._quiet) showToast(name+' を保存しました','success');
   // 保存後に「給与データ入力へ」ボタンをフッターに表示（既存は削除して更新）
   var modalFoot = document.querySelector('#modal-company-add .modal-foot');
   if (modalFoot) {
@@ -4661,7 +4721,7 @@ async function saveForeigner(){
   var idx=foreigners.findIndex(f=>f.nameEn===nameEn&&f.companyName===coName);
   if(idx>=0) foreigners[idx]=Object.assign(foreigners[idx],data); else foreigners.push(data);
   saveLocalCache(); updateBadges(); renderForeignerTable(); updateFgCompanyDatalist();
-  closeModal('modal-foreigner-add'); editingForeignerId=null; showToast(nameEn+' を保存しました','success');
+  if (!saveForeigner._quiet) closeModal('modal-foreigner-add'); editingForeignerId=null; if(!saveForeigner._quiet) showToast(nameEn+' を保存しました','success'); saveForeigner._quiet=false;
   if(GAS_URL){ gasPost(data).catch(function(e){console.error('GAS保存エラー',e); showToast('GAS保存に失敗しました','warn');}); }
 }
 function openImportModal(){openModal('modal-import');}
@@ -6303,13 +6363,13 @@ var MAIL_TEMPLATES = {
   A: {
     subject: '【重要】特定技能外国人 定期届出のご案内',
     body: function(co, contact, deadline, needs2yr) {
-      return 'ご担当者 様\n\nいつもお世話になっております。\n大房行政書士法人大房と申します。\n特定技能外国人の定期届出の時期が参りましたので、ご案内いたします。\n\n━━━━━━━━━━━━━━━━━━━\n【今回ご用意いただくもの】\n━━━━━━━━━━━━━━━━━━━\n\n以下の2点をお送りください。\n\n▶ 在籍している特定技能外国人の賃金台帳のコピー\n　1. 2025年4月〜2026年3月分・全員分\n　2. 2024年4月〜2025年3月分・全員分\n　　＊2024年4月時点で在籍している特定技能の方がいる場合\n\n▶ 前年分の職員の給与所得の源泉徴収票等の法定調書合計表の写し\n\n━━━━━━━━━━━━━━━━━━━\n【確認事項】\n━━━━━━━━━━━━━━━━━━━\n\n① 複数の登録支援機関をご利用いただいている場合、別途署名の書類が必要となりますので、事前にお申し出ください。\n\n② 過去3年間に指導勧告書・改善命令を受けたことがある場合は、必ずご連絡ください。\n\n③ 給与支払が「現金手渡し」の場合は事前にお申し出ください。\n\n━━━━━━━━━━━━━━━━━━━\n【送付方法・期限】\n━━━━━━━━━━━━━━━━━━━\n\n・スキャンまたは写真撮影してメールに添付してください。\n・送付先：' + SEND_MAIL + '\n・期　限：' + deadline + 'まで\n\nご不明な点は代表・大房までお気軽にお電話ください。\nTEL：070-4200-4733\n\n引き続きよろしくお願いいたします。\n\n━━━━━━━━━━━━━━━━━━━\n大房行政書士法人\nMail：' + SEND_MAIL + '\n━━━━━━━━━━━━━━━━━━━';
+      return 'ご担当者 様\n\nいつもお世話になっております。\n大房行政書士法人大房と申します。\n特定技能外国人の定期届出の時期が参りましたので、ご案内いたします。\n\n━━━━━━━━━━━━━━━━━━━\n【今回ご用意いただくもの】\n━━━━━━━━━━━━━━━━━━━\n\n以下の2点をお送りください。\n\n▶ 在籍している特定技能外国人の賃金台帳のコピー\n　1. 2025年4月〜2026年3月分・全員分\n　2. 2024年4月〜2025年3月分・全員分\n　　＊2024年4月時点で在籍している特定技能の方がいる場合\n\n▶ 前年分の職員の給与所得の源泉徴収票等の法定調書合計表の写し\n\n━━━━━━━━━━━━━━━━━━━\n【確認事項】\n━━━━━━━━━━━━━━━━━━━\n\n① 複数の登録支援機関をご利用いただいている場合、別途署名の書類が必要となりますので、事前にお申し出ください。\n\n② 過去3年間に指導勧告書・改善命令を受けたことがある場合は、必ずご連絡ください。\n\n③ 給与支払が「現金手渡し」の場合は事前にお申し出ください。\n\n━━━━━━━━━━━━━━━━━━━\n【送付方法・期限】\n━━━━━━━━━━━━━━━━━━━\n\n・スキャンまたは写真撮影してメールに添付してください。\n・送付先：' + SEND_MAIL + '\n・期　限：' + deadline + 'まで\nご不明な点は代表・大房までお気軽にお電話ください。\nTEL：070-4200-4733\n\n引き続きよろしくお願いいたします。';
     }
   },
   B: {
     subject: '【重要】特定技能外国人 定期届出のご案内',
     body: function(co, contact, deadline, needs2yr) {
-      return 'ご担当者 様\n\nいつもお世話になっております。\n大房行政書士法人大房と申します。\n特定技能外国人の定期届出の時期が参りましたので、ご案内いたします。\n\n━━━━━━━━━━━━━━━━━━━\n【今回ご用意いただくもの】\n━━━━━━━━━━━━━━━━━━━\n\n以下の2点をお送りください。\n\n▶ 在籍している特定技能外国人の賃金台帳のコピー\n　1. 2025年4月〜2026年3月分・全員分\n　2. 2024年4月〜2025年3月分・全員分\n　　＊2024年4月時点で在籍している特定技能の方がいる場合\n\n▶【２】直近3期分の決算書のコピー\n　　　　（または下記の数字をご連絡ください）\n　　　　・売上高\n　　　　・経常損益（利益または損失）\n　　　　・純損益（利益または損失）\n　　　　・純資産（プラスかマイナスかも教えてください）\n\n━━━━━━━━━━━━━━━━━━━\n【確認事項】\n━━━━━━━━━━━━━━━━━━━\n\n① 複数の登録支援機関をご利用いただいている場合、別途署名の書類が必要となりますので、事前にお申し出ください。\n\n② 過去3年間に指導勧告書・改善命令を受けたことがある場合は、必ずご連絡ください。\n\n③ 直近の決算で「純資産がマイナス（債務超過）」になっていませんか？マイナスの場合は別途対応が必要になりますので、お早めにご連絡ください。\n\n④ 源泉徴収税額が1,000万円以上、またはhttps://www.moj.go.jp/isa/content/001378932.pdf の条件を満たす企業様は、省略できる書類がございますので、事前にお申し出ください。\n\n⑤ 給与支払が「現金手渡し」の場合は事前にお申し出ください。\n\n━━━━━━━━━━━━━━━━━━━\n【送付方法・期限】\n━━━━━━━━━━━━━━━━━━━\n\n・スキャンまたは写真撮影してメールに添付してください。\n・送付先：' + SEND_MAIL + '\n・期　限：' + deadline + 'まで\n\nご不明な点は代表・大房までお気軽にお電話ください。\nTEL：070-4200-4733\n\n引き続きよろしくお願いいたします。\n\n━━━━━━━━━━━━━━━━━━━\n大房行政書士法人\nMail：' + SEND_MAIL + '\n━━━━━━━━━━━━━━━━━━━';
+      return 'ご担当者 様\n\nいつもお世話になっております。\n大房行政書士法人大房と申します。\n特定技能外国人の定期届出の時期が参りましたので、ご案内いたします。\n\n━━━━━━━━━━━━━━━━━━━\n【今回ご用意いただくもの】\n━━━━━━━━━━━━━━━━━━━\n\n以下の2点をお送りください。\n\n▶ 在籍している特定技能外国人の賃金台帳のコピー\n　1. 2025年4月〜2026年3月分・全員分\n　2. 2024年4月〜2025年3月分・全員分\n　　＊2024年4月時点で在籍している特定技能の方がいる場合\n\n▶【２】直近3期分の決算書のコピー\n　　　　（または下記の数字をご連絡ください）\n　　　　・売上高\n　　　　・経常損益（利益または損失）\n　　　　・純損益（利益または損失）\n　　　　・純資産（プラスかマイナスかも教えてください）\n\n━━━━━━━━━━━━━━━━━━━\n【確認事項】\n━━━━━━━━━━━━━━━━━━━\n\n① 複数の登録支援機関をご利用いただいている場合、別途署名の書類が必要となりますので、事前にお申し出ください。\n\n② 過去3年間に指導勧告書・改善命令を受けたことがある場合は、必ずご連絡ください。\n\n③ 直近の決算で「純資産がマイナス（債務超過）」になっていませんか？マイナスの場合は別途対応が必要になりますので、お早めにご連絡ください。\n\n④ 源泉徴収税額が1,000万円以上、またはhttps://www.moj.go.jp/isa/content/001378932.pdf の条件を満たす企業様は、省略できる書類がございますので、事前にお申し出ください。\n\n⑤ 給与支払が「現金手渡し」の場合は事前にお申し出ください。\n\n━━━━━━━━━━━━━━━━━━━\n【送付方法・期限】\n━━━━━━━━━━━━━━━━━━━\n\n・スキャンまたは写真撮影してメールに添付してください。\n・送付先：' + SEND_MAIL + '\n・期　限：' + deadline + 'まで\nご不明な点は代表・大房までお気軽にお電話ください。\nTEL：070-4200-4733\n\n引き続きよろしくお願いいたします。';
     }
   },
   C: {
@@ -6322,7 +6382,7 @@ var MAIL_TEMPLATES = {
       var nouzei = isCorp
         ? '▶【７】納税証明書（その3）\n　　　　（税務署で取得：源泉所得税及び復興特別所得税・法人税・消費税及び地方消費税）\n\n▶【８】法人住民税の納税証明書（直近1年分）\n　　　　（市区町村窓口で取得）'
         : '▶【５】納税証明書（その3）\n　　　　（税務署で取得：申告所得税及び復興特別所得税・消費税及び地方消費税・源泉所得税及び復興特別所得税・相続税・贈与税）\n\n▶【６】個人住民税の納税証明書（直近1年分）\n　　　　（市区町村窓口で取得）';
-      return 'ご担当者 様\n\nいつもお世話になっております。\n大房行政書士法人大房と申します。\n特定技能外国人の定期届出の時期が参りましたので、ご案内いたします。\n\n今回はご準備いただく書類が少し多くなりますが、一つひとつ確認しながら\n進めますのでご安心ください。\n\n━━━━━━━━━━━━━━━━━━━\n【今回ご用意いただくもの】\n━━━━━━━━━━━━━━━━━━━\n\n▶【１】在籍している特定技能外国人の賃金台帳のコピー\n　　　　1. 2025年4月〜2026年3月分・全員分\n　　　　2. 2024年4月〜2025年3月分・全員分\n　　　　　 ＊2024年4月時点で在籍している特定技能の方がいる場合\n\n' + (isCorp ? ('▶【２】登記事項証明書（発行から3ヶ月以内のもの）\n　　　　※ 法務局またはオンラインで取得できます\n\n▶【３】業務執行役員・代表者の住民票\n　　　　（マイナンバーなし・本籍地あり）\n\n▶【４】役員の氏名と役職（全員分・ふりがなもあると助かります）\n　　　　例）代表取締役　〇〇 〇〇（ふりがな）\n\n▶【５】直近1年分の労働保険料の納付資料\n　　　　（申告書控えと領収書のコピー）\n\n' + shakaiHoken + '\n\n' + nouzei) : ('▶【２】個人事業主の住民票の写し\n　　　　（マイナンバーなし・本籍地あり）\n\n▶【３】直近1年分の労働保険料の納付資料\n　　　　（申告書控えと領収書のコピー）\n\n' + shakaiHoken + '\n\n' + nouzei)) + '\n\n' + (isCorp ? '▶【９】' : '▶【７】') + '直近3期分の決算書のコピー\n　　　　（または売上高・経常損益・純損益・純資産の数字をご連絡ください）\n\n' + (isCorp ? '▶【１０】' : '▶【８】') + '過去1年間の従業員の離職状況\n　　　　・特定技能外国人と同じ仕事をしていた日本人で退職した方の人数\n　　　　　（本人都合・会社都合に分けてお教えください）\n　　　　・外国人従業員で行方不明になった方の有無\n\n━━━━━━━━━━━━━━━━━━━\n【確認事項】\n━━━━━━━━━━━━━━━━━━━\n\n① 複数の登録支援機関をご利用いただいている場合、別途署名の書類が必要となりますので、事前にお申し出ください。\n\n② 過去3年間に指導勧告書・改善命令を受けたことがある場合は、必ずご連絡ください。\n\n③ 給与支払が「現金手渡し」の場合は事前にお申し出ください。\n\n━━━━━━━━━━━━━━━━━━━\n【送付方法・期限】\n━━━━━━━━━━━━━━━━━━━\n\n・スキャンまたは写真撮影してメールに添付してください。\n・送付先：' + SEND_MAIL + '\n・期　限：' + deadline + 'まで\n\n※ 今回は書類の種類が多いため、早めのご準備をお願いいたします。\n　 ご不明な点は代表・大房までお気軽にお電話ください。\n　 TEL：070-4200-4733\n\n引き続きよろしくお願いいたします。\n\n━━━━━━━━━━━━━━━━━━━\n大房行政書士法人\nMail：' + SEND_MAIL + '\n━━━━━━━━━━━━━━━━━━━';
+      return 'ご担当者 様\n\nいつもお世話になっております。\n大房行政書士法人大房と申します。\n特定技能外国人の定期届出の時期が参りましたので、ご案内いたします。\n\n今回はご準備いただく書類が少し多くなりますが、一つひとつ確認しながら\n進めますのでご安心ください。\n\n━━━━━━━━━━━━━━━━━━━\n【今回ご用意いただくもの】\n━━━━━━━━━━━━━━━━━━━\n\n▶【１】在籍している特定技能外国人の賃金台帳のコピー\n　　　　1. 2025年4月〜2026年3月分・全員分\n　　　　2. 2024年4月〜2025年3月分・全員分\n　　　　　 ＊2024年4月時点で在籍している特定技能の方がいる場合\n\n' + (isCorp ? ('▶【２】登記事項証明書（発行から3ヶ月以内のもの）\n　　　　※ 法務局またはオンラインで取得できます\n\n▶【３】業務執行役員・代表者の住民票\n　　　　（マイナンバーなし・本籍地あり）\n\n▶【４】役員の氏名と役職（全員分・ふりがなもあると助かります）\n　　　　例）代表取締役　〇〇 〇〇（ふりがな）\n\n▶【５】直近1年分の労働保険料の納付資料\n　　　　（申告書控えと領収書のコピー）\n\n' + shakaiHoken + '\n\n' + nouzei) : ('▶【２】個人事業主の住民票の写し\n　　　　（マイナンバーなし・本籍地あり）\n\n▶【３】直近1年分の労働保険料の納付資料\n　　　　（申告書控えと領収書のコピー）\n\n' + shakaiHoken + '\n\n' + nouzei)) + '\n\n' + (isCorp ? '▶【９】' : '▶【７】') + '直近3期分の決算書のコピー\n　　　　（または売上高・経常損益・純損益・純資産の数字をご連絡ください）\n\n' + (isCorp ? '▶【１０】' : '▶【８】') + '過去1年間の従業員の離職状況\n　　　　・特定技能外国人と同じ仕事をしていた日本人で退職した方の人数\n　　　　　（本人都合・会社都合に分けてお教えください）\n　　　　・外国人従業員で行方不明になった方の有無\n\n━━━━━━━━━━━━━━━━━━━\n【確認事項】\n━━━━━━━━━━━━━━━━━━━\n\n① 複数の登録支援機関をご利用いただいている場合、別途署名の書類が必要となりますので、事前にお申し出ください。\n\n② 過去3年間に指導勧告書・改善命令を受けたことがある場合は、必ずご連絡ください。\n\n③ 給与支払が「現金手渡し」の場合は事前にお申し出ください。\n\n━━━━━━━━━━━━━━━━━━━\n【送付方法・期限】\n━━━━━━━━━━━━━━━━━━━\n\n・スキャンまたは写真撮影してメールに添付してください。\n・送付先：' + SEND_MAIL + '\n・期　限：' + deadline + 'まで\nご不明な点は代表・大房までお気軽にお電話ください。\nTEL：070-4200-4733\n\n引き続きよろしくお願いいたします。';
     }
   }
 };
