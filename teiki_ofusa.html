@@ -572,7 +572,7 @@ body.focus-mode .focus-hide { display:none !important; }
   <div id="topbar">
     <div>
       <span class="topbar-title" id="topbar-title">ダッシュボード</span>
-      <span class="topbar-sub" id="topbar-sub">OFUSA 定期届出管理 <span style="font-size:10px;color:var(--text3)">ver.20260421.02</span></span>
+      <span class="topbar-sub" id="topbar-sub">OFUSA 定期届出管理 <span style="font-size:10px;color:var(--text3)">ver.20260421.05</span></span>
     </div>
     <div class="topbar-actions">
       <!-- 集中モードバナー（集中中のみ表示） -->
@@ -4077,7 +4077,7 @@ function selectDocCompany(name) {
     {key:'doc_shakai',name:isCorp?'社会保険料の納付に係る資料（12ヶ月分）':'健康保険・年金等の納付資料',who:'企業収集',req:isN},
     {key:'doc_nouzei',name:isCorp?'納税証明書（その3）— 源泉所得税及び復興特別所得税・法人税・消費税及び地方消費税':'納税証明書（その3）— 申告所得税及び復興特別所得税・消費税及び地方消費税・源泉所得税及び復興特別所得税・相続税・贈与税',who:'企業収集',req:isN},
     {key:'doc_juminzei',name:isCorp?'法人住民税の納税証明書（直近1年分）':'個人住民税の納税証明書（直近1年分）',who:'企業収集',req:isN},
-    {key:'doc_kyuyo',name:'給与明細（12ヶ月分）',who:'企業収集',req:true},
+    {key:'doc_kyuyo',name:'賃金台帳',who:'企業収集',req:true},
     {key:'doc_shoyo',name:'賞与明細（あれば）',who:'企業収集',req:false}
   ];
   var all=docs_ofusa.concat(docs_ext);
