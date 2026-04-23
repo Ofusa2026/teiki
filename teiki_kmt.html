@@ -509,7 +509,7 @@ body.focus-mode .focus-hide { display:none !important; }
     <div class="logo-badge"><span>KMT</span></div>
     <div class="sidebar-title">定期届出<br>管理システム</div>
     <div class="sidebar-sub">2025年度 対象</div>
-    <div class="sidebar-ver" id="sidebar-ver">v2026.04.21.04</div>
+    <div class="sidebar-ver" id="sidebar-ver">v2026.04.21.05</div>
   </div>
 
   <div class="nav-section">
@@ -565,7 +565,7 @@ body.focus-mode .focus-hide { display:none !important; }
   <div id="topbar">
     <div>
       <span class="topbar-title" id="topbar-title">ダッシュボード</span>
-      <span class="topbar-sub" id="topbar-sub">KMT 定期届出 2025年度 ver.20260421.04</span>
+      <span class="topbar-sub" id="topbar-sub">KMT 定期届出 2025年度 ver.20260421.05</span>
     </div>
     <div class="topbar-actions">
       <!-- 集中モードバナー（集中中のみ表示） -->
@@ -2241,7 +2241,7 @@ document.addEventListener('DOMContentLoaded', function() {
       if (e.target === overlay) closeModal(overlay.id);
     });
   });
-  console.log('%c定期届出管理システム v2026.04.21.04%c | companies:'+companies.length+' foreigners:'+foreigners.length, 'background:#1e3a5f;color:#fff;padding:2px 8px;border-radius:3px;font-weight:bold','color:#64748b');
+  console.log('%c定期届出管理システム v2026.04.21.05%c | companies:'+companies.length+' foreigners:'+foreigners.length, 'background:#1e3a5f;color:#fff;padding:2px 8px;border-radius:3px;font-weight:bold','color:#64748b');
   if (GAS_URL) loadAllData();
   else { showToast('設定画面でGAS URLを入力してください','warn'); switchPanel('settings',document.querySelector('[data-panel=settings]')); }
 });
@@ -3976,7 +3976,7 @@ function selectDocCompany(name) {
     {key:'doc_shakai',name:isCorp?'社会保険料の納付に係る資料（12ヶ月分）':'健康保険・年金等の納付資料',who:'企業収集',req:isN},
     {key:'doc_nouzei',name:isCorp?'納税証明書（その3）— 源泉所得税及び復興特別所得税・法人税・消費税及び地方消費税':'納税証明書（その3）— 申告所得税及び復興特別所得税・消費税及び地方消費税・源泉所得税及び復興特別所得税・相続税・贈与税',who:'企業収集',req:isN},
     {key:'doc_juminzei',name:isCorp?'法人住民税の納税証明書（直近1年分）':'個人住民税の納税証明書（直近1年分）',who:'企業収集',req:isN},
-    {key:'doc_kyuyo',name:'給与明細（12ヶ月分）',who:'企業収集',req:true},
+    {key:'doc_kyuyo',name:'賃金台帳',who:'企業収集',req:true},
     {key:'doc_shoyo',name:'賞与明細（あれば）',who:'企業収集',req:false}
   ];
   var all=docs_ofusa.concat(docs_ext);
