@@ -509,7 +509,7 @@ body.focus-mode .focus-hide { display:none !important; }
     <div class="logo-badge"><span>KMT</span></div>
     <div class="sidebar-title">定期届出<br>管理システム</div>
     <div class="sidebar-sub">2025年度 対象</div>
-    <div class="sidebar-ver" id="sidebar-ver">v2026.04.21.05</div>
+    <div class="sidebar-ver" id="sidebar-ver">v2026.04.24.01</div>
   </div>
 
   <div class="nav-section">
@@ -565,7 +565,7 @@ body.focus-mode .focus-hide { display:none !important; }
   <div id="topbar">
     <div>
       <span class="topbar-title" id="topbar-title">ダッシュボード</span>
-      <span class="topbar-sub" id="topbar-sub">KMT 定期届出 2025年度 ver.20260421.05</span>
+      <span class="topbar-sub" id="topbar-sub">KMT 定期届出 2025年度 ver.20260424.01</span>
     </div>
     <div class="topbar-actions">
       <!-- 集中モードバナー（集中中のみ表示） -->
@@ -2241,7 +2241,7 @@ document.addEventListener('DOMContentLoaded', function() {
       if (e.target === overlay) closeModal(overlay.id);
     });
   });
-  console.log('%c定期届出管理システム v2026.04.21.05%c | companies:'+companies.length+' foreigners:'+foreigners.length, 'background:#1e3a5f;color:#fff;padding:2px 8px;border-radius:3px;font-weight:bold','color:#64748b');
+  console.log('%c定期届出管理システム v2026.04.24.01%c | companies:'+companies.length+' foreigners:'+foreigners.length, 'background:#1e3a5f;color:#fff;padding:2px 8px;border-radius:3px;font-weight:bold','color:#64748b');
   if (GAS_URL) loadAllData();
   else { showToast('設定画面でGAS URLを入力してください','warn'); switchPanel('settings',document.querySelector('[data-panel=settings]')); }
 });
@@ -4585,7 +4585,7 @@ async function saveCompany(){
     gotoBtn.onclick = function() { closeModal('modal-company-add'); jumpToSalary(name); };
     modalFoot.appendChild(gotoBtn);
   }
-  if(GAS_URL){ gasPost({action:'upsertCompany',row:Object.assign({},local,data)}).catch(function(e){console.error('GAS保存エラー',e); showToast('GAS保存に失敗しました','warn');}); }
+  if(GAS_URL){ gasPost({action:'upsertCompany',row:Object.assign({},local,data),oldName:editingCompanyId||null}).catch(function(e){console.error('GAS保存エラー',e); showToast('GAS保存に失敗しました','warn');}); }
 }
 function updateFgCompanyDatalist(){document.getElementById('fg-company-list').innerHTML=companies.map(c=>'<option value="'+esc(c.name)+'">').join('');}
 function editForeigner(nameEn,coName){
