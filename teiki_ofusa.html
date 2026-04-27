@@ -509,7 +509,7 @@ body.focus-mode .focus-hide { display:none !important; }
     <div class="logo-badge" style="background:var(--blue)"><span>OFUSA</span></div>
     <div class="sidebar-title">定期届出<br>管理システム</div>
     <div class="sidebar-sub">2025年度 対象</div>
-    <div class="sidebar-ver" id="sidebar-ver">v2026.04.24.01</div>
+    <div class="sidebar-ver" id="sidebar-ver">v2026.04.28.01</div>
   </div>
 
   <div class="nav-section">
@@ -572,7 +572,7 @@ body.focus-mode .focus-hide { display:none !important; }
   <div id="topbar">
     <div>
       <span class="topbar-title" id="topbar-title">ダッシュボード</span>
-      <span class="topbar-sub" id="topbar-sub">OFUSA 定期届出管理 <span style="font-size:10px;color:var(--text3)">ver.20260424.01</span></span>
+      <span class="topbar-sub" id="topbar-sub">OFUSA 定期届出管理 <span style="font-size:10px;color:var(--text3)">ver.20260428.01</span></span>
     </div>
     <div class="topbar-actions">
       <!-- 集中モードバナー（集中中のみ表示） -->
@@ -2347,7 +2347,7 @@ var _coSortKey = '', _coSortAsc = true, _coShowAll = false, _docShowAll = false;
 
 document.addEventListener('DOMContentLoaded', function() {
   loadSettings(); calcDeadline();
-  console.log('%cOFUSA定期届出管理システム v2026.04.24.01%c | companies:'+companies.length+' foreigners:'+foreigners.length, 'background:#1e3a5f;color:#fff;padding:2px 8px;border-radius:3px;font-weight:bold','color:#64748b');
+  console.log('%cOFUSA定期届出管理システム v2026.04.28.01%c | companies:'+companies.length+' foreigners:'+foreigners.length, 'background:#1e3a5f;color:#fff;padding:2px 8px;border-radius:3px;font-weight:bold','color:#64748b');
   if (GAS_URL) loadAllData();
   else { showToast('設定画面でGAS URLを入力してください','warn'); switchPanel('settings',document.querySelector('[data-panel=settings]')); }
 });
@@ -3997,7 +3997,8 @@ function selectCalcCompany(name) {
       var a = sum / sals.length;
       return isInt ? Math.round(a) : Math.round(a*10)/10;
     };
-    var raiseAvg = sals.length ? sals.reduce(function(s,r){ return s+(parseFloat(r.raiseRate)||0); },0)/sals.length : 0;
+    var raiseSals = sals.filter(function(r){ return r.raiseRate!==''&&r.raiseRate!==undefined&&r.raiseRate!==null; });
+    var raiseAvg = raiseSals.length ? raiseSals.reduce(function(s,r){ return s+(parseFloat(r.raiseRate)||0); },0)/raiseSals.length : 0;
     var bonusAvg = sals.length ? Math.round(sals.reduce(function(s,r){ return s+(parseFloat(r.bonus)||0); },0)/sals.length) : 0;
 
     html += '<div class="section-head" style="margin-bottom:8px"><span class="section-title">📋 届出記載値（個人月平均の平均）</span></div>';
@@ -5649,7 +5650,9 @@ async function generate36(coName, returnBlob) {
   }
   function calcRaise(sals) {
     if (!sals.length) return '';
-    return (sals.reduce(function(s,r){ return s+(parseFloat(r.raiseRate)||0); },0) / sals.length).toFixed(1);
+    var valid = sals.filter(function(r){ return r.raiseRate!==''&&r.raiseRate!==undefined&&r.raiseRate!==null; });
+    if (!valid.length) return '';
+    return (valid.reduce(function(s,r){ return s+(parseFloat(r.raiseRate)||0); },0) / valid.length).toFixed(1);
   }
 
   // 数値カンマフォーマット（空文字はそのまま）
@@ -6228,7 +6231,9 @@ async function _generatePatBase(coName, b64, filename, returnBlob) {
   }
   function calcRaise(sals) {
     if (!sals.length) return '';
-    return (sals.reduce(function(s,r){ return s+(parseFloat(r.raiseRate)||0); },0) / sals.length).toFixed(1);
+    var valid = sals.filter(function(r){ return r.raiseRate!==''&&r.raiseRate!==undefined&&r.raiseRate!==null; });
+    if (!valid.length) return '';
+    return (valid.reduce(function(s,r){ return s+(parseFloat(r.raiseRate)||0); },0) / valid.length).toFixed(1);
   }
   function fmtNum(v) {
     if (v === '' || v === null || v === undefined) return '';
