@@ -509,7 +509,7 @@ body.focus-mode .focus-hide { display:none !important; }
     <div class="logo-badge" style="background:var(--blue)"><span>OFUSA</span></div>
     <div class="sidebar-title">定期届出<br>管理システム</div>
     <div class="sidebar-sub">2025年度 対象</div>
-    <div class="sidebar-ver" id="sidebar-ver">v2026.05.11.03</div>
+    <div class="sidebar-ver" id="sidebar-ver">v2026.05.11.04</div>
   </div>
 
   <div class="nav-section">
@@ -572,7 +572,7 @@ body.focus-mode .focus-hide { display:none !important; }
   <div id="topbar">
     <div>
       <span class="topbar-title" id="topbar-title">ダッシュボード</span>
-      <span class="topbar-sub" id="topbar-sub">OFUSA 定期届出管理 <span style="font-size:10px;color:var(--text3)">ver.20260511.03</span></span>
+      <span class="topbar-sub" id="topbar-sub">OFUSA 定期届出管理 <span style="font-size:10px;color:var(--text3)">ver.20260511.04</span></span>
     </div>
     <div class="topbar-actions">
       <!-- 集中モードバナー（集中中のみ表示） -->
@@ -2349,7 +2349,7 @@ var _coSortKey = '', _coSortAsc = true, _coShowAll = false, _docShowAll = false;
 
 document.addEventListener('DOMContentLoaded', function() {
   loadSettings(); calcDeadline();
-  console.log('%cOFUSA定期届出管理システム v2026.05.11.03%c | companies:'+companies.length+' foreigners:'+foreigners.length, 'background:#1e3a5f;color:#fff;padding:2px 8px;border-radius:3px;font-weight:bold','color:#64748b');
+  console.log('%cOFUSA定期届出管理システム v2026.05.11.04%c | companies:'+companies.length+' foreigners:'+foreigners.length, 'background:#1e3a5f;color:#fff;padding:2px 8px;border-radius:3px;font-weight:bold','color:#64748b');
   if (GAS_URL) loadAllData();
   else { showToast('設定画面でGAS URLを入力してください','warn'); switchPanel('settings',document.querySelector('[data-panel=settings]')); }
 });
@@ -2785,7 +2785,7 @@ function renderCompanyTable() {
       '<td>'+fgBadge+'</td>'+
       '<td>'+salBadge+'</td>'+
       '<td style="max-width:200px">'+missingBadgesHtml(co)+'</td>'+
-      '<td style="max-width:200px;font-size:11px;color:var(--text3)">'+esc(co.memo||co.note||'')+'</td>'+
+      '<td style="max-width:200px;font-size:11px;color:var(--text3)">'+esc(co.memo||'')+'</td>'+
       '<td style="white-space:nowrap" onclick="event.stopPropagation()">'+
       '<button class="btn btn-secondary btn-sm" onclick="openDocCheck(\''+esc(co.name)+'\')">書類</button> '+
       '<button class="btn btn-danger btn-sm" onclick="confirmDeleteCompany(\''+esc(co.name)+'\')">削除</button>'+
@@ -4504,7 +4504,7 @@ function editCompany(name){
   var co=companies.find(c=>c.name===name); if(!co) return;
   editingCompanyId=co.name;
   document.getElementById('co-modal-title').textContent='所属機関 編集';
-  ['name:co-name','nameKana:co-name-kana','corpNo:co-corp-no','numFields:co-num-fields','zip:co-zip','pref:co-pref','city:co-city','address:co-address','tel:co-tel','email:co-email','repName:co-rep-name','repTitle:co-rep-title','industry:co-industry','contactName:co-contact-name','note:co-note','pay_method:co-pay-method','loginId1:co-login-id1','loginId2:co-login-id2','password:co-password','pwUpdated:co-pw-updated'].forEach(function(p){
+  ['name:co-name','nameKana:co-name-kana','corpNo:co-corp-no','numFields:co-num-fields','zip:co-zip','pref:co-pref','city:co-city','address:co-address','tel:co-tel','email:co-email','repName:co-rep-name','repTitle:co-rep-title','industry:co-industry','contactName:co-contact-name','memo:co-note','pay_method:co-pay-method','loginId1:co-login-id1','loginId2:co-login-id2','password:co-password','pwUpdated:co-pw-updated'].forEach(function(p){
     var [k,id]=p.split(':'); var el=document.getElementById(id); if(el) el.value=co[k]||'';
   });
   document.getElementById('co-fiscal-year').value=co.fiscalYear||FISCAL_YEAR;
@@ -4642,7 +4642,7 @@ async function saveCompany(){
     loginId1:document.getElementById('co-login-id1').value,loginId2:document.getElementById('co-login-id2').value,
     password:document.getElementById('co-password').value,pwUpdated:document.getElementById('co-pw-updated').value,
     support_org_type:document.getElementById('co-support-type').value,support_org_other:document.getElementById('co-support-other').value,supportOrgName:(document.getElementById('co-support-org-name')||{value:''}).value,
-    has_non_exec_officer:document.getElementById('non-exec-yes').checked?'✓':'✗',memo:document.getElementById('co-note').value,note:document.getElementById('co-note').value,pay_method:(document.getElementById('co-pay-method')||{value:''}).value,
+    has_non_exec_officer:document.getElementById('non-exec-yes').checked?'✓':'✗',memo:document.getElementById('co-note').value,pay_method:(document.getElementById('co-pay-method')||{value:''}).value,
     folderURL:(document.getElementById('co-folder-url')||{value:''}).value};
   data.kijun_result=calcKijunResultFromData(data);
   var officerData = getOfficerData();
